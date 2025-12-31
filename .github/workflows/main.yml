@@ -15,10 +15,8 @@
           file "$FILE_PATH"
           
           echo "--- PARTITION TABLE CHECK (GPT) ---"
-          # gdisk is the best tool to see if the "DOS/MBR" is just a protective layer
           sudo apt-get install -y gdisk
           sudo gdisk -l "$FILE_PATH"
           
           echo "--- APPLE HFS/APFS PROBE ---"
-          # Check if 7z can see the actual macOS system partitions
           7z l "$FILE_PATH" | grep -iE "HFS|APFS|Apple"
