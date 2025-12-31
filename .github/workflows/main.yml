@@ -1,27 +1,30 @@
-name: Safety Verification
-on: workflow_dispatch # Allows you to run it manually
+name: Space-Efficient Verification
+on: workflow_dispatch
 
 jobs:
   verify:
     runs-on: ubuntu-latest
     steps:
-      - name: Install GitHub CLI
-        run: sudo apt update && sudo apt install gh -y
+      - name: Maximize Runner Space
+        # This removes pre-installed software (Android/Dotnet) to free up ~20GB
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/ghc
 
-      - name: Download Artifact
+      - name: Stream Download and Hash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Use the specific Run ID and Repository from your screenshot
-          gh run download 20620689602 -R Kishan200308/macos-iso-builder -D ./verify_dir
-
-      - name: Check Zip Integrity (Screenshot 2 match)
-        run: |
-          # Note: gh download unzips automatically. 
-          # To verify the zip hash, we check the extracted file's structure.
-          ls -R ./verify_dir
-
-      - name: Verify Internal Hash (Screenshot 1 match)
-        run: |
-          # This should match: e80fe344e61c567a645885660c7da4aec7134fc92903ed117f1a14f58944fe3c
-          sha256sum ./verify_dir/macOS_Sonoma_14.8.3.dmg.img/macOS_Sonoma_14.8.3.dmg.img
+          # We download the zip but DO NOT unzip it yet
+          gh run download 20620689602 -R Kishan200308/macos-iso-builder --name "macOS_Sonoma_14.8.3.dmg.img"
+          
+          # Verify the zip hash (Matches your Screenshot 2)
+          echo "Verifying Zip Hash..."
+          sha256sum macOS_Sonoma_14.8.3.dmg.img.zip
+          
+          # Extract and Hash the internal file in one go without keeping the zip
+          unzip -p macOS_Sonoma_14.8.3.dmg.img.zip | sha256sum
+          
+          # Delete zip immediately to save space
+          rm macOS_Sonoma_14.8.3.dmg.img.zip
