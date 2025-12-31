@@ -1,0 +1,24 @@
+- name: Maximize Space and Verify File Type
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # 1. Clear out pre-installed bloat to make room
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc
+          
+          # 2. Download the artifact
+          gh run download 20620689602 -R Kishan200308/macos-iso-builder -D ./verify_dir
+          
+          # 3. Target the actual file path
+          FILE_PATH="./verify_dir/macOS_Sonoma_14.8.3.dmg.img/macOS_Sonoma_14.8.3.dmg.img"
+          
+          echo "--- BASIC FILE TYPE ---"
+          file "$FILE_PATH"
+          
+          echo "--- PARTITION TABLE CHECK (GPT) ---"
+          # gdisk is the best tool to see if the "DOS/MBR" is just a protective layer
+          sudo apt-get install -y gdisk
+          sudo gdisk -l "$FILE_PATH"
+          
+          echo "--- APPLE HFS/APFS PROBE ---"
+          # Check if 7z can see the actual macOS system partitions
+          7z l "$FILE_PATH" | grep -iE "HFS|APFS|Apple"
